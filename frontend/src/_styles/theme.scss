@@ -11237,3 +11237,7 @@ tbody {
     color: #C1C8CD;
   }
 }
+
+.react-grid-item.react-grid-placeholder {
+	pointer-events: none !important;;
+}

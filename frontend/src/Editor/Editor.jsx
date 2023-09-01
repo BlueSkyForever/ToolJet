@@ -1708,7 +1708,7 @@ class EditorComponent extends React.Component {
                             currentPageId={this.state.currentPageId}
                           />
                           <CustomDragLayer
-                            snapToGrid={true}
+                            // snapToGrid={true}
                             canvasWidth={this.getCanvasWidth()}
                             onDragging={(isDragging) => this.setState({ isDragging })}
                           />
