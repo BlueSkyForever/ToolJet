@@ -330,8 +330,7 @@ button {
 
   .resizer-select,
   .resizer-active {
-    outline: solid 1px $primary !important;
-
+    // border: solid 1px $primary !important;
 
     .top-right,
     .top-left,
@@ -2577,6 +2576,13 @@ hr {
   }
 }
 
+.multiple-components-config-handle{
+  position: absolute;
+  left: 54px;
+  top: -20px;
+  transform: translate(-50%, 0px);
+  width: 110px;
+}
 .draggable-box {
   .config-handle {
     top: -20px;
@@ -2584,7 +2590,9 @@ hr {
     max-height: 10px;
     z-index: 100;
     min-width: 108px;
-
+  }
+}
+.draggable-box .config-handle, .multiple-components-config-handle{
     .handle-content {
       cursor: move;
       color: #ffffff;
@@ -2612,10 +2620,23 @@ hr {
       }
     }
   }
-}
 
 .draggable-box-in-editor:hover {
   z-index: 3 !important;
+}
+
+.config-handle:hover,
+.widget-in-canvas:hover .config-handle{
+  visibility: visible;
+}
+
+.config-handle{
+  visibility: hidden;
+  transition: all .15s ease-in-out;
+}
+
+.canvas-area #modal-container .modal-component > .config-handle{
+  visibility: visible !important;
 }
 
 .modal-content {

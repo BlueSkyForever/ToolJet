@@ -60,15 +60,18 @@ import { computeAppDiff, computeComponentPropertyDiff, isParamFromTableColumn, r
 import { setCookie } from '@/_helpers/cookie';
 import { EMPTY_ARRAY, useEditorActions, useEditorStore } from '@/_stores/editorStore';
 import { useAppDataActions, useAppInfo, useAppDataStore } from '@/_stores/appDataStore';
+import { useNoOfGrid } from '@/_stores/gridStore';
 import { useMounted } from '@/_hooks/use-mount';
 import EditorSelecto from './EditorSelecto';
 // eslint-disable-next-line import/no-unresolved
 import { diff } from 'deep-object-diff';
 
 import useDebouncedArrowKeyPress from '@/_hooks/useDebouncedArrowKeyPress';
+import useConfirm from '@/Editor/QueryManager/QueryEditors/TooljetDatabase/Confirm';
 import { getQueryParams } from '@/_helpers/routes';
 import RightSidebarTabManager from './RightSidebarTabManager';
 import { shallow } from 'zustand/shallow';
+import AutoLayoutAlert from './AutoLayoutAlert';
 
 setAutoFreeze(false);
 enablePatches();
@@ -100,6 +103,8 @@ const EditorComponent = (props) => {
     }),
     shallow
   );
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const {
     appDefinition,
     currentLayout,
@@ -165,6 +170,7 @@ const EditorComponent = (props) => {
   const [isQueryPaneDragging, setIsQueryPaneDragging] = useState(false);
   const [isQueryPaneExpanded, setIsQueryPaneExpanded] = useState(false); //!check where this is used
   const [editorMarginLeft, setEditorMarginLeft] = useState(0);
+  const noOfGrids = useNoOfGrid();
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -1187,21 +1193,26 @@ const EditorComponent = (props) => {
   };
 
   const moveComponents = (direction) => {
-    const gridWidth = (1 * 100) / 43; // width of the canvas grid in percentage
+    // const isAutoComputeOn = appDefinition.pages[currentPageId]?.autoComputeLayout && currentLayout === 'mobile';
+    // if (isAutoComputeOn) {
+    //   turnOffAutoLayout();
+    //   return;
+    // }
+    const gridWidth = (1 * 100) / noOfGrids; // width of the canvas grid in percentage
     const _appDefinition = _.cloneDeep(appDefinition);
     let newComponents = _appDefinition?.pages[currentPageId].components;
     const selectedComponents = useEditorStore.getState()?.selectedComponents;
-
     for (const selectedComponent of selectedComponents) {
       let top = newComponents[selectedComponent.id].layouts[currentLayout].top;
       let left = newComponents[selectedComponent.id].layouts[currentLayout].left;
+      const width = newComponents[selectedComponent.id]?.layouts[currentLayout]?.width;
 
       switch (direction) {
         case 'ArrowLeft':
-          left = left - gridWidth;
+          left = left - 1;
           break;
         case 'ArrowRight':
-          left = left + gridWidth;
+          left = left + 1;
           break;
         case 'ArrowDown':
           top = top + 10;
@@ -1209,6 +1220,16 @@ const EditorComponent = (props) => {
         case 'ArrowUp':
           top = top - 10;
           break;
+      }
+
+      if (left < 0 || top < 0 || left + width > noOfGrids) {
+        return;
+      }
+
+      const movedElement = document.getElementById(selectedComponent.id);
+      const parentElm = movedElement.closest('.real-canvas');
+      if (selectedComponent?.component?.parent && parentElm.clientHeight < top + movedElement.clientHeight) {
+        return;
       }
 
       newComponents[selectedComponent.id].layouts[currentLayout].top = top;
@@ -1493,6 +1514,23 @@ const EditorComponent = (props) => {
     });
   };
 
+  const turnOffAutoComputeLayout = ({ pageId, autoComputeLayout }) => {
+    updateEditorState({
+      isUpdatingEditorStateInProcess: true,
+    });
+
+    const copyOfAppDefinition = JSON.parse(JSON.stringify(appDefinition));
+
+    const newAppDefinition = _.cloneDeep(copyOfAppDefinition);
+
+    newAppDefinition.pages[pageId].autoComputeLayout = autoComputeLayout ?? false;
+
+    switchPage(pageId);
+    appDefinitionChanged(newAppDefinition, {
+      pageDefinitionChanged: true,
+    });
+  };
+
   const hidePage = (pageId) => {
     updateEditorState({
       isUpdatingEditorStateInProcess: true,
@@ -1635,6 +1673,16 @@ const EditorComponent = (props) => {
       generalAppDefinitionChanged: true,
     });
   };
+
+  async function turnOffAutoLayout() {
+    const result = await confirm(
+      'Once Auto Layout is disabled, you wont be able to turn if back on and the mobile layout won’t automatically align with desktop changes',
+      'Turn off Auto Layout'
+    );
+    if (result) {
+      turnOffAutoComputeLayout({ pageId: currentPageId, autoComputeLayout: false });
+    }
+  }
 
   const handleCanvasContainerMouseUp = (e) => {
     if (
@@ -1823,13 +1871,18 @@ const EditorComponent = (props) => {
                     {defaultComponentStateComputed && (
                       <>
                         <Container
+                          turnOffAutoLayout={turnOffAutoLayout}
                           canvasWidth={getCanvasWidth()}
                           socket={socket}
                           appDefinition={appDefinition}
                           appDefinitionChanged={appDefinitionChanged}
                           snapToGrid={true}
                           darkMode={props.darkMode}
-                          mode={'edit'}
+                          mode={
+                            appDefinition.pages[currentPageId]?.autoComputeLayout && currentLayout === 'mobile'
+                              ? 'view'
+                              : 'edit'
+                          }
                           zoomLevel={zoomLevel}
                           deviceWindowWidth={deviceWindowWidth}
                           appLoading={isLoading}
@@ -1853,6 +1906,10 @@ const EditorComponent = (props) => {
                     )}
                   </div>
                 </div>
+                <AutoLayoutAlert
+                  show={appDefinition.pages[currentPageId]?.autoComputeLayout && currentLayout === 'mobile'}
+                  onClick={turnOffAutoLayout}
+                />
               </div>
               <QueryPanel
                 onQueryPaneDragging={handleQueryPaneDragging}
@@ -1892,7 +1949,12 @@ const EditorComponent = (props) => {
                   </div>
                 }
                 widgetManagerTab={
-                  <WidgetManager componentTypes={componentTypes} zoomLevel={zoomLevel} darkMode={props.darkMode} />
+                  <WidgetManager
+                    componentTypes={componentTypes}
+                    zoomLevel={zoomLevel}
+                    darkMode={props.darkMode}
+                    disabled={appDefinition.pages[currentPageId]?.autoComputeLayout && currentLayout === 'mobile'}
+                  />
                 }
                 allComponents={appDefinition.pages[currentPageId]?.components}
               />
@@ -1903,8 +1965,11 @@ const EditorComponent = (props) => {
           </div>
         </DndProvider>
       </EditorContextWrapper>
+      <ConfirmDialog confirmButtonText="Turn off" darkMode={props.darkMode} />
     </div>
   );
 };
+
+const getHighestParent = () => {};
 
 export const Editor = withTranslation()(withRouter(EditorComponent));

@@ -207,6 +207,9 @@ const computePageUpdate = (appDiff, currentPageId, opts) => {
   } else if (opts.includes('pageDefinitionChanged')) {
     updateDiff = appDiff?.pages[currentPageId];
 
+    //remove invalid diffs that are added to pageDiff
+    delete updateDiff.components;
+
     type = updateType.pageDefinitionChanged;
 
     if (opts.includes('addNewPage')) {
