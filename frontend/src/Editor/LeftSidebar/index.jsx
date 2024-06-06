@@ -21,7 +21,7 @@ import useDebugger from './SidebarDebugger/useDebugger';
 import { GlobalSettings } from '../Header/GlobalSettings';
 import cx from 'classnames';
 
-export const LeftSidebar = forwardRef((props, ref) => {
+export default forwardRef((props, ref) => {
   const router = useRouter();
   const {
     appId,

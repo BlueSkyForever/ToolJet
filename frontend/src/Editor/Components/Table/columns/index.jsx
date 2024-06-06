@@ -1,12 +1,11 @@
-import React from 'react';
-import _ from 'lodash';
+import React, { lazy } from 'react';
+import { isEmpty, isEqual } from 'lodash';
 import SelectSearch from 'react-select-search';
 import { resolveReferences, validateWidget, determineJustifyContentValue, validateDates } from '@/_helpers/utils';
 import { CustomDropdown } from '../CustomDropdown';
 import { Tags } from '../Tags';
 import { Radio } from '../Radio';
 import { Toggle } from '../Toggle';
-import { Datepicker } from '../Datepicker';
 import { Link } from '../Link';
 import moment from 'moment';
 import { Boolean } from '../Boolean';
@@ -14,6 +13,8 @@ import { CustomSelect } from '../CustomSelect';
 import SolidIcon from '@/_ui/Icon/SolidIcons';
 import Text from '../Text';
 import StringColumn from '../String';
+
+const Datepicker = lazy(() => import('../Datepicker'));
 
 export default function generateColumnsData({
   columnProperties,
@@ -138,8 +139,8 @@ export default function generateColumnsData({
         const rowData = tableData?.[cell?.row?.index];
         if (
           cell.row.index === 0 &&
-          !_.isEmpty(variablesExposedForPreview) &&
-          !_.isEqual(variablesExposedForPreview[id]?.rowData, rowData)
+          !isEmpty(variablesExposedForPreview) &&
+          !isEqual(variablesExposedForPreview[id]?.rowData, rowData)
         ) {
           const customResolvables = {};
           customResolvables[id] = { ...variablesExposedForPreview[id], rowData };

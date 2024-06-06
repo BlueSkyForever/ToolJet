@@ -1,5 +1,5 @@
 import React from 'react';
-import _ from 'lodash';
+import { truncate } from 'lodash';
 // eslint-disable-next-line import/no-unresolved
 import FolderList from '@/_ui/FolderList/FolderList';
 import { ButtonSolid } from '@/_ui/AppButton/AppButton';
@@ -56,7 +56,7 @@ export const ViewerSidebarNavigation = ({
                 selectedItem={page?.id === currentPageId}
               >
                 <span data-cy={`pages-name-${String(page?.name).toLowerCase()}`} className="mx-3 text-wrap page-name">
-                  {_.truncate(page?.name, { length: 18 })}
+                  {truncate(page?.name, { length: 18 })}
                 </span>
               </FolderList>
             )

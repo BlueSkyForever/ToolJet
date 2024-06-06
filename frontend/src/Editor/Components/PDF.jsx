@@ -5,7 +5,7 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css'; // Required to fix duplicate text appearing at the bottom from the previous page
 import { debounce } from 'lodash';
 
-export const PDF = React.memo(({ styles, properties, width, height, component, dataCy }) => {
+export default React.memo(({ styles, properties, width, height, component, dataCy }) => {
   const pdfName = component.name;
   const { visibility, boxShadow } = styles;
   const { url, scale, pageControls, showDownloadOption } = properties;

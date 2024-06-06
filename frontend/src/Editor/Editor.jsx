@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useLayoutEffect } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState, lazy } from 'react';
 import {
   appService,
   authenticationService,
@@ -13,10 +13,8 @@ import _, { isEqual, isEmpty, debounce, omit, noop } from 'lodash';
 import { Container } from './Container';
 import { EditorKeyHooks } from './EditorKeyHooks';
 import { CustomDragLayer } from './CustomDragLayer';
-import { LeftSidebar } from './LeftSidebar';
 import { componentTypes } from './WidgetManager/components';
 import { Inspector } from './Inspector/Inspector';
-import QueryPanel from './QueryPanel/QueryPanel';
 import {
   onEvent,
   onQueryConfirmOrCancel,
@@ -80,7 +78,6 @@ import useAppDarkMode from '@/_hooks/useAppDarkMode';
 import useDebouncedArrowKeyPress from '@/_hooks/useDebouncedArrowKeyPress';
 import useConfirm from '@/Editor/QueryManager/QueryEditors/TooljetDatabase/Confirm';
 import { getQueryParams } from '@/_helpers/routes';
-import RightSidebarTabManager from './RightSidebarTabManager';
 import { shallow } from 'zustand/shallow';
 import AutoLayoutAlert from './AutoLayoutAlert';
 import { HotkeysProvider } from 'react-hotkeys-hook';
@@ -95,6 +92,14 @@ import {
 } from '@/_helpers/editorHelpers';
 import { TJLoader } from '@/_ui/TJLoader/TJLoader';
 import cx from 'classnames';
+
+// import QueryPanel from './QueryPanel/QueryPanel';
+// import LeftSidebar from './LeftSidebar';
+// import RightSidebarTabManager from './RightSidebarTabManager';
+
+const QueryPanel = lazy(() => import('./QueryPanel/QueryPanel'));
+const RightSidebarTabManager = lazy(() => import('./RightSidebarTabManager'));
+const LeftSidebar = lazy(() => import('./LeftSidebar'));
 
 setAutoFreeze(false);
 enablePatches();

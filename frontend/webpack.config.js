@@ -1,4 +1,4 @@
-var HtmlWebpackPlugin = require('html-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const path = require('path');
 const CompressionPlugin = require('compression-webpack-plugin');
@@ -31,7 +31,7 @@ const plugins = [
   }),
   new CompressionPlugin({
     test: /\.js(\?.*)?$/i,
-    algorithm: 'gzip',
+    algorithm: 'brotliCompress',
   }),
   new webpack.ContextReplacementPlugin(/moment[/\\]locale$/, /(en)$/),
   new webpack.DefinePlugin({
@@ -72,10 +72,11 @@ module.exports = {
     ],
     splitChunks: {
       cacheGroups: {
-        vendors: {
+        vendor: {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendor',
-          chunks: 'all',
+          chunks: 'initial',
+          enforce: true,
         },
       },
     },

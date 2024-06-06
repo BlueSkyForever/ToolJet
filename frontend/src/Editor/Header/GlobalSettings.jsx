@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import cx from 'classnames';
-import { SketchPicker } from 'react-color';
 import { Confirm } from '../Viewer/Confirm';
 import { HeaderSection } from '@/_ui/LeftSidebar';
 import FxButton from '../CodeBuilder/Elements/FxButton';
@@ -18,6 +17,8 @@ import { useEditorStore } from '@/_stores/editorStore';
 import CodeHinter from '../CodeEditor';
 import { useCurrentState } from '@/_stores/currentStateStore';
 import AppModeToggle from './AppModeToggle';
+
+const SketchPicker = lazy(() => import('react-color').then((module) => ({ default: module.SketchPicker })));
 
 export const GlobalSettings = ({
   globalSettings,
@@ -315,19 +316,22 @@ export const GlobalSettings = ({
                   {showPicker && (
                     <div>
                       <div style={coverStyles} onClick={() => setShowPicker(false)} />
-                      <SketchPicker
-                        data-cy={`color-picker-canvas`}
-                        className="canvas-background-picker"
-                        onFocus={() => setShowPicker(true)}
-                        color={canvasBackgroundColor}
-                        onChangeComplete={(color) => {
-                          const options = {
-                            canvasBackgroundColor: [color.hex, color.rgb],
-                            backgroundFxQuery: '',
-                          };
-                          globalSettingsChanged(options);
-                        }}
-                      />
+                      <Suspense fallback={null}>
+                        <SketchPicker
+                          data-cy={`color-picker-canvas`}
+                          className="canvas-background-picker"
+                          onFocus={() => setShowPicker(true)}
+                          color={canvasBackgroundColor}
+                          onChangeComplete={(color) => {
+                            const options = {
+                              canvasBackgroundColor: [color.hex, color.rgb],
+                              backgroundFxQuery: '',
+                            };
+
+                            globalSettingsChanged(options);
+                          }}
+                        />
+                      </Suspense>
                     </div>
                   )}
                   {forceCodeBox && (
