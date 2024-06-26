@@ -43,9 +43,11 @@ import { ComponentsService } from '@services/components.service';
 import { PageService } from '@services/page.service';
 import { EventsService } from '@services/events_handler.service';
 import { TooljetDbModule } from '../tooljet_db/tooljet_db.module';
+import { UserResourcePermissionsModule } from '@module/user_resource_permissions/user_resource_permissions.module';
 
 @Module({
   imports: [
+    UserResourcePermissionsModule,
     TypeOrmModule.forFeature([
       App,
       AppVersion,
@@ -57,6 +59,7 @@ import { TooljetDbModule } from '../tooljet_db/tooljet_db.module';
       User,
       Organization,
       DataSource,
+      //Depreciated
       GroupPermission,
       AppGroupPermission,
       UserGroupPermission,

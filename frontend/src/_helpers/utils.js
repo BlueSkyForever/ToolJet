@@ -1224,11 +1224,13 @@ export const USER_DRAWER_MODES = {
 
 export const humanizeifDefaultGroupName = (groupName) => {
   switch (groupName) {
-    case 'all_users':
-      return 'All users';
+    case 'end-user':
+      return 'End user';
 
     case 'admin':
       return 'Admin';
+    case 'builder':
+      return 'Builder';
 
     default:
       return groupName;

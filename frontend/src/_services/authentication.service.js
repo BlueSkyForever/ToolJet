@@ -17,6 +17,7 @@ const currentSessionSubject = new BehaviorSubject({
   current_organization_name: null,
   super_admin: null,
   admin: null,
+  user_permissions: null,
   group_permissions: null,
   app_group_permissions: null,
   organizations: [],

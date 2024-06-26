@@ -87,6 +87,7 @@ export class AppController {
 
     let app: { organizationId: string; isPublic: boolean };
     if (appId) {
+      //TODO: This function should not be part pf userService
       app = await this.userService.returnOrgIdOfAnApp(appId);
     }
 

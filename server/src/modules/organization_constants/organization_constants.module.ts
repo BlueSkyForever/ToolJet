@@ -33,10 +33,12 @@ import { Credential } from 'src/entities/credential.entity';
 import { PluginsHelper } from 'src/helpers/plugins.helper';
 import { AppEnvironmentService } from '@services/app_environments.service';
 import { TooljetDbModule } from '../tooljet_db/tooljet_db.module';
+import { UserResourcePermissionsModule } from '@module/user_resource_permissions/user_resource_permissions.module';
 
 @Module({
   controllers: [OrganizationConstantController],
   imports: [
+    UserResourcePermissionsModule,
     TypeOrmModule.forFeature([
       App,
       OrganizationConstant,
@@ -50,7 +52,9 @@ import { TooljetDbModule } from '../tooljet_db/tooljet_db.module';
       DataSource,
       DataQuery,
       FolderApp,
+      //Depreciated
       GroupPermission,
+      //Depreciated
       AppGroupPermission,
       Credential,
     ]),

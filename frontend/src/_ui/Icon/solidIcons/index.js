@@ -167,6 +167,8 @@ import Open from './Open.jsx';
 import TooljetIcon from './TooljetIcon.jsx';
 import TriangleUpCenter from './TriangleUpCenter.jsx';
 import TriangleDownCenter from './TriangleDownCenter.jsx';
+import UserGear from './UserGear.jsx';
+import GranularAccess from './GranularAccess.jsx';
 import ShiftButtonIcon from './ShiftButtonIcon.jsx';
 import Unpin01 from './Unpin01.jsx';
 
@@ -292,6 +294,8 @@ const Icon = (props) => {
       return <Globe {...props} />;
     case 'grid':
       return <Grid {...props} />;
+    case 'granularaccess':
+      return <GranularAccess {...props} />;
     case 'helppolygon':
       return <HelpPolygon {...props} />;
     case 'home':
@@ -442,6 +446,8 @@ const Icon = (props) => {
       return <UserAdd {...props} />;
     case 'usergroup':
       return <UserGroup {...props} />;
+    case 'usergear':
+      return <UserGear {...props} />;
     case 'userremove':
       return <UserRemove {...props} />;
     case 'uturn':

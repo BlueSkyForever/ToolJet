@@ -36,6 +36,7 @@ import { Metadata } from 'src/entities/metadata.entity';
 import { MetadataService } from '@services/metadata.service';
 import { SessionService } from '@services/session.service';
 import { TooljetDbModule } from '../tooljet_db/tooljet_db.module';
+import { UserResourcePermissionsModule } from '@module/user_resource_permissions/user_resource_permissions.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { TooljetDbModule } from '../tooljet_db/tooljet_db.module';
       inject: [ConfigService],
     }),
     TooljetDbModule,
+    UserResourcePermissionsModule,
   ],
   providers: [
     OrganizationsService,
@@ -75,6 +77,7 @@ import { TooljetDbModule } from '../tooljet_db/tooljet_db.module';
     EmailService,
     FilesService,
     AuthService,
+    //Need to check if group permission is required in organization module
     GroupPermissionsService,
     EncryptionService,
     DataSourcesService,

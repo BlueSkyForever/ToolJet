@@ -39,6 +39,7 @@ import { ManageOrgUsers } from '@/ManageOrgUsers';
 import { ManageGroupPermissions } from '@/ManageGroupPermissions';
 import OrganizationLogin from '@/_components/OrganizationLogin/OrganizationLogin';
 import { ManageOrgVars } from '@/ManageOrgVars';
+import { ManageGroupPermissionsV2 } from '@/ManageGroupPermissionsV2/ManageGroupPermissionsV2';
 
 const AppWrapper = (props) => {
   const { isAppDarkMode } = useAppDarkMode();
@@ -308,7 +309,7 @@ class AppComponent extends React.Component {
                   path="groups"
                   element={
                     <AdminRoute>
-                      <ManageGroupPermissions switchDarkMode={this.switchDarkMode} darkMode={darkMode} />
+                      <ManageGroupPermissionsV2 switchDarkMode={this.switchDarkMode} darkMode={darkMode} />
                     </AdminRoute>
                   }
                 />

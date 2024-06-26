@@ -1,7 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotAcceptableException } from '@nestjs/common';
 import * as csv from 'fast-csv';
 import { InjectRepository } from '@nestjs/typeorm';
-import { GroupPermission } from 'src/entities/group_permission.entity';
 import { Organization } from 'src/entities/organization.entity';
 import { SSOConfigs } from 'src/entities/sso_config.entity';
 import { User } from 'src/entities/user.entity';
@@ -35,6 +34,11 @@ import { Response } from 'express';
 import { AppEnvironmentService } from './app_environments.service';
 import { DataBaseConstraints } from 'src/helpers/db_constraints.constants';
 import { OrganizationUpdateDto } from '@dto/organization.dto';
+import { UserRoleService } from './user-role.service';
+import {
+  GROUP_PERMISSIONS_TYPE,
+  USER_ROLE,
+} from '@module/user_resource_permissions/constants/group-permissions.constant';
 import { DataSourceScopes, DataSourceTypes } from 'src/helpers/data_source.constants';
 import { DataSource } from 'src/entities/data_source.entity';
 import { AppEnvironment } from 'src/entities/app_environments.entity';
@@ -87,7 +91,8 @@ export class OrganizationsService {
     private appEnvironmentService: AppEnvironmentService,
     private encryptionService: EncryptionService,
     private emailService: EmailService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private userRoleService: UserRoleService
   ) {}
 
   async create(name: string, slug: string, user: User, manager?: EntityManager): Promise<Organization> {
@@ -112,17 +117,11 @@ export class OrganizationsService {
 
       await this.appEnvironmentService.createDefaultEnvironments(organization.id, manager);
 
-      const createdGroupPermissions: GroupPermission[] = await this.createDefaultGroupPermissionsForOrganization(
-        organization,
-        manager
-      );
+      await this.userRoleService.createDefaultGroups(organization.id, manager);
 
       if (user) {
         await this.organizationUserService.create(user, organization, false, manager);
-
-        for (const groupPermission of createdGroupPermissions) {
-          await this.groupPermissionService.createUserGroupPermission(user.id, groupPermission.id, manager);
-        }
+        await this.userRoleService.addUserRole({ role: USER_ROLE.ADMIN, userId: user.id }, organization.id, manager);
       }
     }, manager);
 
@@ -176,34 +175,6 @@ export class OrganizationsService {
 
   async getSingleOrganization(): Promise<Organization> {
     return await this.organizationsRepository.findOne({ relations: ['ssoConfigs'] });
-  }
-
-  async createDefaultGroupPermissionsForOrganization(organization: Organization, manager?: EntityManager) {
-    const defaultGroups = ['all_users', 'admin'];
-
-    return await dbTransactionWrap(async (manager: EntityManager) => {
-      const createdGroupPermissions: GroupPermission[] = [];
-      for (const group of defaultGroups) {
-        const isAdmin = group === 'admin';
-        const groupPermission = manager.create(GroupPermission, {
-          organizationId: organization.id,
-          group: group,
-          appCreate: isAdmin,
-          appDelete: isAdmin,
-          folderCreate: isAdmin,
-          orgEnvironmentVariableCreate: isAdmin,
-          orgEnvironmentVariableUpdate: isAdmin,
-          orgEnvironmentVariableDelete: isAdmin,
-          orgEnvironmentConstantCreate: isAdmin,
-          orgEnvironmentConstantDelete: isAdmin,
-          folderUpdate: isAdmin,
-          folderDelete: isAdmin,
-        });
-        await manager.save(groupPermission);
-        createdGroupPermissions.push(groupPermission);
-      }
-      return createdGroupPermissions;
-    }, manager);
   }
 
   async fetchUsersByValue(user: User, searchInput: string): Promise<any> {
@@ -266,9 +237,9 @@ export class OrganizationsService {
     const query = createQueryBuilder(OrganizationUser, 'organization_user')
       .innerJoinAndSelect('organization_user.user', 'user')
       .innerJoinAndSelect(
-        'user.groupPermissions',
-        'group_permissions',
-        'group_permissions.organization_id = :organizationId',
+        'user.userPermissions',
+        'userPermissions',
+        'userPermissions.organizationId = :organizationId',
         {
           organizationId: organizationId,
         }
@@ -290,6 +261,9 @@ export class OrganizationsService {
       .getMany();
 
     return organizationUsers?.map((orgUser) => {
+      //Change as per new group permissions
+      const role = orgUser.user.userPermissions.filter((group) => group.type === GROUP_PERMISSIONS_TYPE.DEFAULT);
+      const groups = orgUser.user.userPermissions.filter((group) => group.type === GROUP_PERMISSIONS_TYPE.CUSTOM_GROUP);
       return {
         email: orgUser.user.email,
         firstName: orgUser.user.firstName ?? '',
@@ -300,7 +274,8 @@ export class OrganizationsService {
         role: orgUser.role,
         status: orgUser.status,
         avatarId: orgUser.user.avatarId,
-        groups: orgUser.user.groupPermissions.map((groupPermission) => groupPermission.group),
+        groups: groups.map((groupPermission) => ({ name: groupPermission.name, id: groupPermission.id })),
+        roleGroup: role.map((groupPermission) => ({ name: groupPermission.name, id: groupPermission.id })),
         ...(orgUser.invitationToken ? { invitationToken: orgUser.invitationToken } : {}),
         ...(this.configService.get<string>('HIDE_ACCOUNT_SETUP_LINK') !== 'true' && orgUser.user.invitationToken
           ? { accountSetupToken: orgUser.user.invitationToken }
@@ -595,11 +570,10 @@ export class OrganizationsService {
       email: inviteNewUserDto.email,
       ...getUserStatusAndSource(lifecycleEvents.USER_INVITE),
     };
-    const groups = inviteNewUserDto.groups ?? [];
-
+    const groups = inviteNewUserDto?.groups;
+    const role = inviteNewUserDto.role;
     return await dbTransactionWrap(async (manager: EntityManager) => {
       let user = await this.usersService.findByEmail(userParams.email, undefined, undefined, manager);
-
       if (user?.status === USER_STATUS.ARCHIVED) {
         throw new BadRequestException(getUserErrorMessages(user.status));
       }
@@ -633,17 +607,21 @@ export class OrganizationsService {
       user = await this.usersService.create(
         userParams,
         currentUser.organizationId,
-        ['all_users', ...groups],
+        role,
         user,
         true,
         defaultOrganization?.id,
         manager
       );
-
       if (defaultOrganization) {
         // Setting up default organization
         await this.organizationUserService.create(user, defaultOrganization, true, manager);
-        await this.usersService.attachUserGroup(['all_users', 'admin'], defaultOrganization.id, user.id, manager);
+
+        await this.userRoleService.addUserRole(
+          { userId: user.id, role: USER_ROLE.END_USER },
+          defaultOrganization.id,
+          manager
+        );
       }
 
       const currentOrganization: Organization = await this.organizationsRepository.findOneOrFail({
@@ -657,6 +635,7 @@ export class OrganizationsService {
         manager
       );
 
+      await this.usersService.attachUserGroup(groups, currentOrganization.id, user.id, manager);
       const name = fullName(currentUser.firstName, currentUser.lastName);
       if (shouldSendWelcomeMail) {
         this.emailService
@@ -715,12 +694,13 @@ export class OrganizationsService {
     const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
     const manager = getManager();
 
+    //New group permissions change
     const groupPermissions = await this.groupPermissionService.findAll(currentUser);
     const existingGroups = groupPermissions.map((groupPermission) => groupPermission.group);
 
     csv
       .parseString(fileStream.toString(), {
-        headers: ['first_name', 'last_name', 'email', 'groups'],
+        headers: ['first_name', 'last_name', 'email', 'groups', 'role'],
         renameHeaders: true,
         ignoreEmpty: true,
       })
