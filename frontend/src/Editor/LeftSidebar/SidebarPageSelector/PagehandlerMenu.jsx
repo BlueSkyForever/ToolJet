@@ -118,7 +118,14 @@ export const PagehandlerMenu = ({
             setShowMenu(true);
           }}
         >
-          <SolidIcon width="20" dataCy={`page-menu`} name="morevertical" />
+          <SolidIcon
+            viewBox="0 0 20 24"
+            fill="var(--slate12)"
+            width="20"
+            view
+            dataCy={`page-menu`}
+            name="morevertical"
+          />
         </Button.UnstyledButton>
       </span>
     </OverlayTrigger>

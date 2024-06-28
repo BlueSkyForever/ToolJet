@@ -316,3 +316,35 @@ export const isValidDomain = (email: string, restrictedDomain: string): boolean 
   }
   return true;
 };
+
+export function isObject(obj) {
+  return obj && typeof obj === 'object';
+}
+
+export function mergeDeep(target, source, seen = new WeakMap()) {
+  if (!isObject(target)) {
+    target = {};
+  }
+
+  if (!isObject(source)) {
+    return target;
+  }
+
+  if (seen.has(source)) {
+    return seen.get(source);
+  }
+  seen.set(source, target);
+
+  for (const key in source) {
+    if (isObject(source[key])) {
+      if (!target[key]) {
+        Object.assign(target, { [key]: {} });
+      }
+      mergeDeep(target[key], source[key], seen);
+    } else {
+      Object.assign(target, { [key]: source[key] });
+    }
+  }
+
+  return target;
+}

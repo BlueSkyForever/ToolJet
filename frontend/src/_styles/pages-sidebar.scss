@@ -7,12 +7,22 @@
         transition: var(--tran-01);
     }
 
+    .page-name {
+        font-size: 14px;
+    }
+
     .navigation-area {
         z-index: 2;
         border-right: 1px solid var(--slate6);
 
+        .left-sidebar-header-btn {
+            width: 25px;
+            height: 25px;
+        }
+
         .tj-list-item {
             width: 96%;
+            justify-content: start;
         }
 
         &.close {
@@ -35,14 +45,67 @@
 
                 .tj-list-item {
                     opacity: 1;
-                    display: unset;
+                    display: flex;
                 }
+        }
+
+        &.icon-only {
+            width: 65px !important;
+            padding: 0.5rem;
+
+            .tj-list-item {
+                justify-content: center;
+
+                .custom-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
         }
     }
 
     .canvas-box {
         &.close {
             margin-left: 22px !important;
+        }
+    }
+}
+
+.pages-settings {
+    .label-style {
+        width: unset !important;
+        .ToggleGroupItem {
+            width: unset !important;
+            .toggle-item {
+                width: unset !important;
+                padding: 6px;;
+            }
+        }
+
+    }
+
+    .settings-tab {
+        .field {
+            label {
+                width: 100px;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+        }
+    }
+}
+
+.handler-selector {
+    .icon-selector {
+        width: 25px;
+        height: 25px;
+        margin-right: 2px;
+        justify-content: center;
+        &:hover {
+            background: var(--slate7);
+            border-radius: 6px;
         }
     }
 }

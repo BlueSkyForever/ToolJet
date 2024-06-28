@@ -21,6 +21,7 @@ import {
   runQuery,
   computeComponentState,
   buildAppDefinition,
+  computePageSettings,
 } from '@/_helpers/appUtils';
 import queryString from 'query-string';
 import ViewerLogoIcon from './Icons/viewer-logo.svg';
@@ -75,6 +76,7 @@ class ViewerComponent extends React.Component {
       isSidebarPinned: localStorage.getItem('isPagesSidebarPinned') === 'false' ? false : true,
       isSidebarHovered: false,
       canvasAreaWidth: null,
+      showViewerNavigation: false,
     };
   }
 
@@ -94,7 +96,6 @@ class ViewerComponent extends React.Component {
     if (byAppSlug) {
       appDefData.globalSettings = data.globalSettings;
       appDefData.homePageId = data.homePageId;
-      appDefData.showViewerNavigation = data.showViewerNavigation;
     }
     const appMode = data.globalSettings?.appMode || data?.editing_version?.globalSettings?.appMode;
     useAppVersionStore.getState().actions.updateEditingVersion(data.editing_version);
@@ -110,6 +111,9 @@ class ViewerComponent extends React.Component {
 
     useEditorStore.getState().actions.updateEditorState({
       appDefinition: appDefData,
+    });
+    computePageSettings((value) => {
+      this.setState({ showViewerNavigation: !resolveReferences(value, this.props.currentState) });
     });
     useResolveStore.getState().actions.resetStore();
   };
@@ -624,7 +628,17 @@ class ViewerComponent extends React.Component {
         this.loadApplicationByVersion(this.props.id, useAppVersionStore.getState().editingVersion.id);
       }
     }
-
+    if (
+      this.props.currentState.pageSettings?.definition?.properties?.disableMenu?.fxActive &&
+      prevProps.currentState.components !== this.props.currentState.components
+    ) {
+      this.setState({
+        showViewerNavigation: !resolveReferences(
+          this.props.currentState.pageSettings?.definition?.properties?.disableMenu.value,
+          this.props.currentState
+        ),
+      });
+    }
     if (this.state.initialComputationOfStateDone) this.handlePageSwitchingBasedOnURLparam();
     if (this.state.homepage !== prevState.homepage && !this.state.isLoading) {
       <Navigate to={`${this.state.homepage}${this.props.params.pageHandle ? '' : window.location.search}`} replace />;
@@ -823,7 +837,7 @@ class ViewerComponent extends React.Component {
 
     if (appDefinition.globalSettings?.canvasMaxWidthType === 'px')
       computedCanvasMaxWidth =
-        (+appDefinition.globalSettings?.canvasMaxWidth || 1292) - (appDefinition?.showViewerNavigation ? 200 : 0);
+        (+appDefinition.globalSettings?.canvasMaxWidth || 1292) - (this.state.showViewerNavigation ? 200 : 0);
     else if (appDefinition.globalSettings?.canvasMaxWidthType === '%')
       computedCanvasMaxWidth = +appDefinition.globalSettings?.canvasMaxWidth + '%';
 
@@ -846,11 +860,13 @@ class ViewerComponent extends React.Component {
       canvasWidth,
       isSidebarPinned,
       canvasAreaWidth,
+      showViewerNavigation,
     } = this.state;
 
     const currentCanvasWidth = canvasWidth;
     const queryConfirmationList = this.props?.queryConfirmationList ?? [];
     const canvasMaxWidth = this.computeCanvasMaxWidth();
+
     const pages =
       Object.entries(_.cloneDeep(appDefinition)?.pages)
         .map(([id, page]) => ({ id, ...page }))
@@ -911,7 +927,7 @@ class ViewerComponent extends React.Component {
                 currentPageId={this.state?.currentPageId ?? this.state.appDefinition?.homePageId}
                 switchPage={this.switchPage}
                 setAppDefinitionFromVersion={this.setAppDefinitionFromVersion}
-                showViewerNavigation={appDefinition?.showViewerNavigation}
+                showViewerNavigation={showViewerNavigation}
               />
             )}
             {/* Render following mobile header only when its in preview mode and not in launched app */}
@@ -925,7 +941,7 @@ class ViewerComponent extends React.Component {
                 currentPageId={this.state?.currentPageId ?? this.state.appDefinition?.homePageId}
                 switchPage={this.switchPage}
                 setAppDefinitionFromVersion={this.setAppDefinitionFromVersion}
-                showViewerNavigation={appDefinition?.showViewerNavigation}
+                showViewerNavigation={showViewerNavigation}
               />
             )}
             <div className="sub-section">
@@ -937,7 +953,7 @@ class ViewerComponent extends React.Component {
                   }}
                 >
                   <div className="areas d-flex flex-rows">
-                    {appDefinition?.showViewerNavigation && (
+                    {showViewerNavigation && (
                       <ViewerSidebarNavigation
                         showHeader={!appDefinition.globalSettings?.hideHeader && isAppLoaded}
                         isMobileDevice={this.props.currentLayout === 'mobile'}
@@ -955,10 +971,7 @@ class ViewerComponent extends React.Component {
                       })}
                       style={{
                         backgroundColor: isMobilePreviewMode ? '#ACB2B9' : 'unset',
-                        marginLeft:
-                          appDefinition?.showViewerNavigation && this.props.currentLayout !== 'mobile'
-                            ? '210px'
-                            : 'auto',
+                        marginLeft: showViewerNavigation && this.props.currentLayout !== 'mobile' ? '210px' : 'auto',
                       }}
                     >
                       <div
@@ -982,7 +995,7 @@ class ViewerComponent extends React.Component {
                             currentPageId={this.state?.currentPageId ?? this.state.appDefinition?.homePageId}
                             switchPage={this.switchPage}
                             setAppDefinitionFromVersion={this.setAppDefinitionFromVersion}
-                            showViewerNavigation={appDefinition?.showViewerNavigation}
+                            showViewerNavigation={showViewerNavigation}
                           />
                         )}
                         {defaultComponentStateComputed && (

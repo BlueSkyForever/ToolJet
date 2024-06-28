@@ -41,6 +41,7 @@ export const LeftSidebar = forwardRef((props, ref) => {
     renamePage,
     hidePage,
     unHidePage,
+    updatePageIcon,
     updateHomePage,
     updatePageHandle,
     showHideViewerNavigationControls,
@@ -70,10 +71,11 @@ export const LeftSidebar = forwardRef((props, ref) => {
     }),
     shallow
   );
-  const { showComments, appMode } = useEditorStore(
+  const { showComments, appMode, pageSettingSelected } = useEditorStore(
     (state) => ({
       showComments: state?.showComments,
       appMode: state?.appMode,
+      pageSettingSelected: state?.pageSettingSelected,
     }),
     shallow
   );
@@ -127,6 +129,10 @@ export const LeftSidebar = forwardRef((props, ref) => {
       return btnRef.contains(ev.target);
     });
 
+    if (pageSettingSelected) {
+      return;
+    }
+
     if (!isBtnClicked && !pinned) {
       setSelectedSidebarItem(null);
     }
@@ -154,6 +160,7 @@ export const LeftSidebar = forwardRef((props, ref) => {
             renamePage={renamePage}
             hidePage={hidePage}
             unHidePage={unHidePage}
+            updatePageIcon={updatePageIcon}
             disableEnablePage={disableEnablePage}
             updateHomePage={updateHomePage}
             updatePageHandle={updatePageHandle}

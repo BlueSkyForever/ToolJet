@@ -12,7 +12,13 @@ import { AppGroupPermission } from 'src/entities/app_group_permission.entity';
 import { AppImportExportService } from './app_import_export.service';
 import { DataSourcesService } from './data_sources.service';
 import { Credential } from 'src/entities/credential.entity';
-import { catchDbException, cleanObject, dbTransactionWrap, defaultAppEnvironments } from 'src/helpers/utils.helper';
+import {
+  catchDbException,
+  cleanObject,
+  dbTransactionWrap,
+  defaultAppEnvironments,
+  mergeDeep,
+} from 'src/helpers/utils.helper';
 import { AppUpdateDto } from '@dto/app-update.dto';
 import { viewableAppsQuery } from 'src/helpers/queries';
 import { VersionEditDto } from '@dto/version-edit.dto';
@@ -397,7 +403,8 @@ export class AppsService {
       if (versionFrom) {
         (appVersion.showViewerNavigation = versionFrom.showViewerNavigation),
           (appVersion.globalSettings = versionFrom.globalSettings),
-          await manager.save(appVersion);
+          (appVersion.pageSettings = versionFrom.pageSettings);
+        await manager.save(appVersion);
 
         const oldDataQueryToNewMapping = await this.createNewDataSourcesAndQueriesForVersion(
           manager,
@@ -1042,7 +1049,7 @@ export class AppsService {
   async updateAppVersion(version: AppVersion, body: AppVersionUpdateDto) {
     const editableParams = {};
 
-    const { globalSettings, homePageId } = await this.appVersionsRepository.findOne({
+    const { globalSettings, homePageId, pageSettings } = await this.appVersionsRepository.findOne({
       where: { id: version.id },
     });
 
@@ -1054,6 +1061,12 @@ export class AppsService {
       editableParams['globalSettings'] = {
         ...globalSettings,
         ...body.globalSettings,
+      };
+    }
+
+    if (body?.pageSettings) {
+      editableParams['pageSettings'] = {
+        ...mergeDeep(pageSettings, body.pageSettings),
       };
     }
 
