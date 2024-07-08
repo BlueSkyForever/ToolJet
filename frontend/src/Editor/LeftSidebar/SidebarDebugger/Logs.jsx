@@ -1,19 +1,26 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { capitalize, startCase } from 'lodash';
 import moment from 'moment';
 import JSONTreeViewer from '@/_ui/JSONTreeViewer';
 import cx from 'classnames';
 import SolidIcon from '@/_ui/Icon/SolidIcons';
 import { useEditorActions, useEditorStore } from '@/_stores/editorStore';
+import useDebugger from './useDebugger'; // Import the useDebugger hook
+import { useQueryPanelActions, useSelectedQuery } from '@/_stores/queryPanelStore';
 
-function Logs({ logProps, idx }) {
+function Logs({ logProps, idx, switchPage }) {
   const [open, setOpen] = React.useState(false);
-  let titleLogType = logProps?.type;
+  const { handleErrorClick, selectedError } = useDebugger({}); // Initialize the useDebugger hook and extract handleErrorClick
+  const childRef = useRef(null);
+  const { setSelectedQuery, expandQueryPanel } = useQueryPanelActions();
+  const selectedQuery = useSelectedQuery();
+
+  let titleLogType = logProps?.type !== 'event' ? logProps?.type : '';
   // need to change the titleLogType to query for transformations because if transformation fails, it is eventually a query failure
   if (titleLogType === 'transformations') {
     titleLogType = 'query';
   }
-  const title = ` [${capitalize(titleLogType)} ${logProps?.key}]`;
+  const title = `[${capitalize(titleLogType)}${titleLogType ? ' ' : ''}${logProps?.key}]`;
   const message =
     logProps?.type === 'navToDisablePage'
       ? logProps?.message
@@ -27,6 +34,7 @@ function Logs({ logProps, idx }) {
           (isString(logProps?.error?.description) && logProps?.error?.description) || //added string check since description can be an object. eg: runpy
           logProps?.error?.message
         }`;
+  const currentPageId = useEditorStore.getState().currentPageId;
 
   const defaultStyles = {
     transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
@@ -53,6 +61,13 @@ function Logs({ logProps, idx }) {
     }
   };
 
+  const handleSelectQueryOnEditor = (queryId) => {
+    const isAlreadySelected = queryId == selectedQuery.id;
+    if (!isAlreadySelected) {
+      setSelectedQuery(queryId);
+    }
+  };
+
   const callbackActions = [
     {
       for: 'all',
@@ -60,7 +75,38 @@ function Logs({ logProps, idx }) {
       enableForAllChildren: true,
       enableFor1stLevelChildren: true,
     },
+    {
+      for: 'queries',
+      actions: [{ name: 'Select Query', dispatchAction: handleSelectQueryOnEditor, icon: false, onSelect: true }],
+      enableForAllChildren: true,
+      enableFor1stLevelChildren: true,
+    },
   ];
+
+  React.useEffect(() => {
+    // After switchPage completes, call onSelect if childRef.current is defined
+    if (childRef.current) {
+      if (logProps.type == 'component') onSelect(logProps.error.componentId, 'componentId', ['componentId']);
+    } else if (logProps.type == 'query') {
+      expandQueryPanel();
+      setSelectedQuery(logProps.id);
+      onSelect(logProps.id, 'queries', ['queries']);
+    } else {
+      onSelect(logProps.error.componentId, 'events', ['events']);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, childRef.current]);
+
+  const onSelect = (data, currentNode, path) => {
+    if (childRef.current) {
+      const actions = childRef.current
+        .getOnSelectLabelDispatchActions(currentNode, path)
+        ?.filter((action) => action.onSelect);
+      actions.forEach((action) => {
+        action.dispatchAction(data, currentNode);
+      });
+    }
+  };
 
   const renderNavToDisabledPageMessage = () => {
     const text = message.split(logProps.page);
@@ -78,12 +124,36 @@ function Logs({ logProps, idx }) {
     );
   };
 
+  const handleClick = async () => {
+    setOpen((prev) => !prev);
+    handleErrorClick(logProps);
+
+    if (!childRef.current) return;
+
+    if (logProps?.page?.id && logProps?.page?.id !== currentPageId && logProps.type === 'component') {
+      await switchPage(logProps.page.id);
+    }
+
+    switch (logProps.type) {
+      case 'component':
+        await onSelect(logProps.error.componentId, 'componentId', ['componentId']);
+        break;
+      case 'query':
+        await expandQueryPanel();
+        await setSelectedQuery(logProps.id);
+        await onSelect(logProps.id, 'queries', ['queries']);
+        break;
+      default:
+        console.warn(`Unhandled logProps type: ${logProps.type}`);
+        await onSelect(logProps.error.componentId, 'componentId', ['componentId']);
+    }
+  };
   return (
     <div className="tab-content debugger-content" key={`${logProps?.key}-${idx}`}>
       <p
         className="m-0 d-flex"
-        onClick={(e) => {
-          setOpen((prev) => !prev);
+        onClick={() => {
+          handleClick();
         }}
         style={{ pointerEvents: logProps?.isQuerySuccessLog ? 'none' : 'default' }}
       >
@@ -111,21 +181,21 @@ function Logs({ logProps, idx }) {
           )}
         </span>
       </p>
-
-      {open && (
-        <JSONTreeViewer
-          data={logProps.error}
-          useIcons={false}
-          useIndentedBlock={true}
-          enableCopyToClipboard={false}
-          useActions={true}
-          actionIdentifier="id"
-          expandWithLabels={true}
-          fontSize={'10px'}
-          actionsList={callbackActions}
-          treeType="debugger"
-        />
-      )}
+      {/* {open && ( */}
+      <JSONTreeViewer
+        data={logProps.error}
+        useIcons={false}
+        useIndentedBlock={true}
+        enableCopyToClipboard={false}
+        useActions={true}
+        actionIdentifier="id"
+        expandWithLabels={true}
+        fontSize={'10px'}
+        actionsList={callbackActions}
+        treeType="debugger"
+        ref={childRef}
+      />
+      {/* )} */}
       <hr className="border-1 border-bottom bg-grey" />
     </div>
   );

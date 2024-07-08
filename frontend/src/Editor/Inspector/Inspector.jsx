@@ -240,7 +240,6 @@ export const Inspector = ({
   }
 
   // use following function when more than one property needs to be updated
-
   function paramsUpdated(array, isParamFromTableColumn = false) {
     let newComponent = JSON.parse(JSON.stringify(component));
     let newDefinition = _.cloneDeep(newComponent.component.definition);
