@@ -50,6 +50,7 @@ export const Listview = function Listview({
   };
   const [selectedRowIndex, setSelectedRowIndex] = useState(undefined);
   const [positiveColumns, setPositiveColumns] = useState(columns);
+  const [rowClickCount, setRowClickCount] = useState(0);
   const parentRef = useRef(null);
   const [childrenData, setChildrenData] = useState({});
 
@@ -62,7 +63,6 @@ export const Listview = function Listview({
     if (isEditorReady) {
       setExposedVariables(exposedVariables);
     }
-    fireEvent('onRecordClicked');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }
   function onRowClicked(index) {
@@ -74,9 +74,16 @@ export const Listview = function Listview({
     if (isEditorReady) {
       setExposedVariables(exposedVariables);
     }
-    fireEvent('onRowClicked');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }
+
+  useEffect(() => {
+    if (rowClickCount > 0) {
+      fireEvent('onRowClicked');
+      fireEvent('onRecordClicked');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowClickCount]);
 
   useEffect(() => {
     if (columns < 1) {
@@ -166,6 +173,7 @@ export const Listview = function Listview({
             onClick={(event) => {
               onRecordClicked(index);
               onRowClicked(index);
+              setRowClickCount((prev) => prev + 1);
             }}
           >
             <SubContainer
