@@ -4,7 +4,6 @@ import Information from '@/_ui/Icon/solidIcons/Information';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getWorkspaceId, decodeEntities } from '@/_helpers/utils';
-import { ButtonSolid } from '@/_ui/AppButton/AppButton';
 import { SearchBox as SearchBox2 } from '@/_components/SearchBox';
 import DataSourceIcon from './DataSourceIcon';
 import { isEmpty } from 'lodash';
@@ -15,6 +14,7 @@ import { Tooltip } from 'react-tooltip';
 import { authenticationService } from '@/_services';
 import SolidIcon from '@/_ui/Icon/SolidIcons';
 import '../queryManager.theme.scss';
+import ButtonComponent from '@/components/ui/Button/Index';
 
 function DataSourcePicker({ dataSources, sampleDataSource, staticDataSources, darkMode, globalDataSources }) {
   const allUserDefinedSources = [...dataSources, ...globalDataSources];
@@ -75,18 +75,18 @@ function DataSourcePicker({ dataSources, sampleDataSource, staticDataSources, da
         <div className="query-datasource-card-container d-flex justify-content-between mb-3 mt-2">
           {staticDataSources.map((source) => {
             return (
-              <ButtonSolid
+              <ButtonComponent
                 key={`${source.id}-${source.kind}`}
-                variant="tertiary"
-                size="sm"
+                className="text-truncate"
                 onClick={() => {
                   handleChangeDataSource(source);
                 }}
-                className="text-truncate"
+                variant="outline"
+                className="tw-flex-1"
                 data-cy={`${source.kind.toLowerCase().replace(/\s+/g, '-')}-add-query-card`}
               >
                 <DataSourceIcon source={source} height={14} /> {source.shortName}
-              </ButtonSolid>
+              </ButtonComponent>
             );
           })}
         </div>
@@ -97,19 +97,18 @@ function DataSourcePicker({ dataSources, sampleDataSource, staticDataSources, da
             </label>
 
             <div className="query-datasource-card-container d-flex justify-content-between mb-3 mt-2">
-              <ButtonSolid
+              <ButtonComponent
                 key={`${sampleDataSource.id}-${sampleDataSource.kind}`}
-                variant="tertiary"
-                size="sm"
+                className="text-truncate"
                 onClick={() => {
                   handleChangeDataSource(sampleDataSource);
                 }}
-                className="text-truncate"
+                variant="outline"
                 data-cy={`${sampleDataSource.kind.toLowerCase().replace(/\s+/g, '-')}-sample-db-add-query-card`}
               >
                 <DataSourceIcon source={sampleDataSource} height={14} />{' '}
                 {sampleDataSource.kind == 'postgresql' ? 'PostgreSQL' : 'ToolJetDB'}
-              </ButtonSolid>
+              </ButtonComponent>
             </div>
 
             {/* Info icon */}
@@ -139,15 +138,15 @@ function DataSourcePicker({ dataSources, sampleDataSource, staticDataSources, da
             {`Available Data sources ${!isEmpty(allUserDefinedSources) ? '(' + allUserDefinedSources.length + ')' : 0}`}
           </label>
           {admin && (
-            <ButtonSolid
-              size="sm"
-              variant="ghostBlue"
+            <ButtonComponent
+              leadingIcon="plus01"
+              fill="var(--indigo9)"
               onClick={handleAddClick}
+              variant="ghostBrand"
               data-cy={`landing-page-add-new-ds-button`}
             >
-              <Plus style={{ height: '16px' }} fill="var(--indigo9)" />
               Add new
-            </ButtonSolid>
+            </ButtonComponent>
           )}
         </div>
         {isEmpty(allUserDefinedSources) ? (
@@ -165,14 +164,13 @@ function DataSourcePicker({ dataSources, sampleDataSource, staticDataSources, da
             <Row className="mt-2">
               {filteredUserDefinedDataSources.map((source) => (
                 <Col sm="6" key={source.id} className="ps-1">
-                  <ButtonSolid
+                  <ButtonComponent
                     key={`${source.id}-${source.kind}`}
-                    variant="ghostBlack"
-                    size="sm"
                     className="font-weight-400 py-3 mb-1 w-100 justify-content-start"
                     onClick={() => {
                       handleChangeDataSource(source);
                     }}
+                    variant="ghost"
                     data-tooltip-id="tooltip-for-query-panel-ds-picker-btn"
                     data-tooltip-content={decodeEntities(source.name)}
                     data-cy={`${String(source.name).toLowerCase().replace(/\s+/g, '-')}-add-query-card`}
@@ -180,7 +178,7 @@ function DataSourcePicker({ dataSources, sampleDataSource, staticDataSources, da
                     <DataSourceIcon source={source} height={14} styles={{ minWidth: 14 }} />
                     <span className="text-truncate">{decodeEntities(source.name)}</span>
                     <Tooltip id="tooltip-for-query-panel-ds-picker-btn" className="tooltip" />
-                  </ButtonSolid>
+                  </ButtonComponent>
                 </Col>
               ))}
             </Row>

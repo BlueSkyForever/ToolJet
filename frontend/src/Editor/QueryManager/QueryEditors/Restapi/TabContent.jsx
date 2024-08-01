@@ -1,10 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import AddRectangle from '@/_ui/Icon/bulkIcons/AddRectangle';
-import { ButtonSolid } from '@/_ui/AppButton/AppButton';
 import Trash from '@/_ui/Icon/solidIcons/Trash';
 import CodeHinter from '@/Editor/CodeEditor';
 import InfoIcon from '@assets/images/icons/info.svg';
+import ButtonComponent from '@/components/ui/Button/Index';
+
 
 export default ({
   options = [],
@@ -84,10 +84,9 @@ export default ({
         </div>
       ) : (
         <div className="d-flex mb-2" style={{ maxHeight: '32px', marginTop: '4px' }}>
-          <ButtonSolid variant="ghostBlue" size="sm" onClick={() => addNewKeyValuePair(paramType)}>
-            <AddRectangle width="15" fill="#3E63DD" opacity="1" secondaryFill="#ffffff" />
-            {t('editor.inspector.eventManager.addKeyValueParam', 'Add more')}
-          </ButtonSolid>
+          <ButtonComponent leadingIcon="plusrectangle" onClick={() => addNewKeyValuePair(paramType)} variant="ghostBrand">
+            Add more
+          </ButtonComponent>
         </div>
       )}
     </div>
